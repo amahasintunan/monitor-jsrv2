@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.jmonitor.proto";
+option java_outer_classname = "MonitorProto";
+
+package jmonitor;
+
+service MonitorService {
+  rpc GetStats (MonitorStatsRequest) returns (MonitorStatsResponse) {}
+}
+
+message MonitorStatsRequest {
+  bool exclude_pseudo_fs = 1;
+}
+
+message MonitorStatsResponse {
+  int32 cpu = 1;
+  CpuList cpu_list = 2;
+  Memory memory = 3;
+  Network network = 4;
+  repeated Disk disk = 5;
+}
+
+message CpuList {
+  int32 entries = 1;
+  repeated CpuEntry cpus = 2;
+}
+
+message CpuEntry {
+  string id = 1;
+  int32 usage_percent = 2;
+}
+
+message Memory {
+  int64 mem_total = 1;
+  int64 mem_free = 2;
+  int64 mem_available = 3;
+}
+
+message Network {
+  int64 rcv_bytes = 1;
+  int64 snd_bytes = 2;
+  string interface = 3;
+}
+
+message Disk {
+  string file_system = 1;
+  string type = 2;
+  int64 blocks = 3;
+  int64 used = 4;
+  int64 available = 5;
+  int32 use_percent = 6;
+  string mounted_on = 7;
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  File:        monitor_resource.xml
+  Date:        08/17/2025
+  Description: Monitor Resource
+-->
+<monitor>
+    <globalProps>
+        <browserPath>/opt/google/chrome/chrome</browserPath>
+    </globalProps>
+</monitor>

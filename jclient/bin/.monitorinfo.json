@@ -1,0 +1,31 @@
+{
+  "x": 1528,
+  "y": -32,
+  "cx": 360,
+  "cy": 254,
+  "speed": "NORMAL",
+  "performance": "CPU",
+  "networkScale": "SCALE_2MB",
+  "graphDirection": "RIGHT_TO_LEFT",
+  "fgColor": {
+    "color_r": 255,
+    "color_g": 255,
+    "color_b": 255
+  },
+  "fgColor2": {
+    "color_r": 0,
+    "color_g": 255,
+    "color_b": 0
+  },
+  "bgColor": {
+    "color_r": 0,
+    "color_g": 0,
+    "color_b": 0
+  },
+  "scaleColor": {
+    "color_r": 128,
+    "color_g": 128,
+    "color_b": 128
+  },
+  "timeoutSeconds": 1
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="maven-antrun-" default="main">
+  <target name="main">
+    <mkdir dir="/home/anan/git/monitor-jsrv/jclient-cli/bin" />
+    <copy file="/home/anan/git/monitor-jsrv/jclient-cli/jmonitor-client-cli.ini" todir="/home/anan/git/monitor-jsrv/jclient-cli/bin" />
+    <copy file="/home/anan/git/monitor-jsrv/jclient-cli/monitor-client-cli.sh" todir="/home/anan/git/monitor-jsrv/jclient-cli/bin" />
+    <copy file="/home/anan/git/monitor-jsrv/jclient-cli/target/jmonitor-client-cli.jar" todir="/home/anan/git/monitor-jsrv/jclient-cli/bin" />
+    <chmod perm="755" includes="*.sh" dir="/home/anan/git/monitor-jsrv/jclient-cli/bin" />
+  </target>
+</project>
