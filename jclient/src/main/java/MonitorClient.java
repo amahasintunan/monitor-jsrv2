@@ -536,12 +536,14 @@ public class MonitorClient extends JFrame
                 jNet.put("sndBytes", response.getNetwork().getSndBytes());
                 jsonObject.put("network", jNet);
 
-                // Disks
+                // Disks — use same keys as server-side JSON:
+                //   fileSystem, type, 1k-blocks, used, available, use%, mountedOn
                 JSONArray jDisks = new JSONArray();
                 for (Disk d : response.getDiskList()) {
                     JSONObject jd = new JSONObject();
                     jd.put("fileSystem", d.getFileSystem());
-                    jd.put("size", d.getBlocks());
+                    jd.put("type", d.getType());
+                    jd.put("1k-blocks", d.getBlocks());
                     jd.put("used", d.getUsed());
                     jd.put("available", d.getAvailable());
                     jd.put("use%", (long) d.getUsePercent());
@@ -550,18 +552,19 @@ public class MonitorClient extends JFrame
                 }
                 jsonObject.put("disk", jDisks);
 
-                // CPU list
+                // CPU list — build same shape as server-side getCpuListAsJson():
+                //   {"entries": N, "cpus": [{"cpu": agg%}, {"cpu0": core0%}, {"cpu1": core1%}, …]}
+                // Each array element is a single-key {id: percent} object.
+                // The gRPC CpuList already includes the "cpu" aggregate as its first entry.
                 if (response.hasCpuList()) {
                     JSONObject jCpuList = new JSONObject();
                     JSONArray jCpus = new JSONArray();
                     for (CpuEntry e : response.getCpuList().getCpusList()) {
                         JSONObject jc = new JSONObject();
-                        jc.put("cpu", e.getId());
-                        jc.put("user", (long) e.getUsagePercent());
-                        jc.put("system", 0L);
-                        jc.put("idle", (long) (100 - e.getUsagePercent()));
+                        jc.put(e.getId(), (long) e.getUsagePercent());
                         jCpus.add(jc);
                     }
+                    jCpuList.put("entries", (long) jCpus.size());
                     jCpuList.put("cpus", jCpus);
                     jsonObject.put("cpuList", jCpuList);
                 }
