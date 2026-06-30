@@ -1,6 +1,6 @@
 {
-  "x": 1528,
-  "y": -32,
+  "x": 2195,
+  "y": 285,
   "cx": 360,
   "cy": 254,
   "speed": "NORMAL",
@@ -13,14 +13,14 @@
     "color_b": 255
   },
   "fgColor2": {
-    "color_r": 0,
+    "color_r": 255,
     "color_g": 255,
     "color_b": 0
   },
   "bgColor": {
     "color_r": 0,
-    "color_g": 0,
-    "color_b": 0
+    "color_g": 51,
+    "color_b": 51
   },
   "scaleColor": {
     "color_r": 128,
