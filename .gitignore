@@ -8,26 +8,3 @@ jserver/bin/*.jar
 jclient-cli/bin/*.jar
 jclient/bin/*.jar
 jclient/bin/lib/
-
-# IDE
-.idea/
-*.iml
-.vscode/
-.settings/
-.project
-.classpath
-*.swp
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Java
-*.class
-
-# Maven
-dependency-reduced-pom.xml
-
-# Logs
-*.log
