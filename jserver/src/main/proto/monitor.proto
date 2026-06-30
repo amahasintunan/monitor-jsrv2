@@ -41,6 +41,7 @@ message Memory {
 message Network {
   int64 rcv_bytes = 1;
   int64 snd_bytes = 2;
+  string interface = 3;
 }
 
 message Disk {
