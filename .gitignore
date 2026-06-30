@@ -1,8 +1,13 @@
 # Maven build output
-target/
+jserver/target/
+jclient-cli/target/
+jclient/target/
 
-# Assembled runtime directory
-bin/
+# Assembled runtime — built jars/libraries only (keep .ini, .sh, .bat, .xml)
+jserver/bin/*.jar
+jclient-cli/bin/*.jar
+jclient/bin/*.jar
+jclient/bin/lib/
 
 # IDE
 .idea/
