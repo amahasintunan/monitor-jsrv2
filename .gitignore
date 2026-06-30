@@ -1,0 +1,28 @@
+# Maven build output
+target/
+
+# Assembled runtime directory
+bin/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+
+# Maven
+dependency-reduced-pom.xml
+
+# Logs
+*.log
