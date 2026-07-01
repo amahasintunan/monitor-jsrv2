@@ -1,14 +1,14 @@
 @echo off
-REM File. monitor_client2.bat
+REM File. monitor-client.bat
 REM Date. 06/23/2026
 REM Description.
 REM       Multi-Protocol Client for Linux Performance Monitor (Windows).
 REM       Supports UDP, TCP, HTTP, and gRPC transports.
 REM       Examples:
-REM         monitor_client2.bat --host=localhost --port=2019 --protocol=udp
-REM         monitor_client2.bat --host=localhost --port=2019 --protocol=tcp
-REM         monitor_client2.bat --host=localhost --port=2019 --protocol=http
-REM         monitor_client2.bat --host=localhost --port=2019 --protocol=grpc
+REM         monitor-client.bat --host=localhost --port=2019 --protocol=udp
+REM         monitor-client.bat --host=localhost --port=2019 --protocol=tcp
+REM         monitor-client.bat --host=localhost --port=2019 --protocol=http
+REM         monitor-client.bat --host=localhost --port=2019 --protocol=grpc
 
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
