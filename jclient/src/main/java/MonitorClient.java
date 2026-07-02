@@ -33,6 +33,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -83,7 +84,9 @@ public class MonitorClient extends JFrame
     private int portNumber = Protocol.UDP.getDefaultPort();
     private boolean echo = false;
     private int socketTimeoutSec = DEFAULT_SOCKET_TIMEOUT_SEC;
-    private String apiPath = "/";
+    // /metrics works with both C++ HTTP server (exact match) and
+    // Java HTTP server (root context "/" prefix-matches "/metrics").
+    private String apiPath = "/metrics";
     private int grpcTimeoutSeconds = 1;
     final int USAGE_INTERVAL = 60;
     final Color SCALE_COLOR = Color.gray;
@@ -335,6 +338,14 @@ public class MonitorClient extends JFrame
                     socket = new Socket();
                     socket.connect(new InetSocketAddress(hostName, portNumber), socketTimeoutSec * 1000);
                     socket.setSoTimeout(socketTimeoutSec * 1000);
+
+                    // Send trigger byte — required by C++ TCP server which blocks on
+                    // recv() before responding. Harmless for Java TCP server which
+                    // does not read from the socket before writing its response.
+                    OutputStream out = socket.getOutputStream();
+                    out.write(0);
+                    out.flush();
+
                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                     String responseJson = in.readLine();
                     isReceived = (responseJson != null && !responseJson.isEmpty());
@@ -500,6 +511,7 @@ public class MonitorClient extends JFrame
             try {
                 JSONParser jsonParser = new JSONParser();
                 JSONObject jsonObject = (JSONObject) jsonParser.parse(responseJson);
+                normalizeJsonKeys(jsonObject);
                 parseAndUpdate(jsonObject);
             } catch (ParseException | RuntimeException pex) {
                 logger.warning(MonitorBundle.format("log.malformed.response", TITLE_NAME, pex.getMessage()));
@@ -577,6 +589,74 @@ public class MonitorClient extends JFrame
     }
 
     // -----------------------------------------------------------------
+    // -----------------------------------------------------------------
+    // JSON normalization — convert snake_case (C++ TCP/HTTP server) to
+    // camelCase so the rest of the UI code works with either server.
+    // gRPC responses already arrive in camelCase, so this is a no-op.
+    // -----------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    private void normalizeJsonKeys(JSONObject json) {
+        // Top-level: cpu_list → cpuList
+        renameKeyIfPresent(json, "cpu_list", "cpuList");
+
+        // Memory: mem_total → memTotal, etc.
+        JSONObject memory = (JSONObject) json.get("memory");
+        if (memory != null) {
+            renameKeyIfPresent(memory, "mem_total", "memTotal");
+            renameKeyIfPresent(memory, "mem_free", "memFree");
+            renameKeyIfPresent(memory, "mem_available", "memAvailable");
+        }
+
+        // Network: rcv_bytes → rcvBytes, etc.
+        JSONObject network = (JSONObject) json.get("network");
+        if (network != null) {
+            renameKeyIfPresent(network, "rcv_bytes", "rcvBytes");
+            renameKeyIfPresent(network, "snd_bytes", "sndBytes");
+        }
+
+        // Disk array: file_system → fileSystem, blocks → 1k-blocks, etc.
+        JSONArray disks = (JSONArray) json.get("disk");
+        if (disks != null) {
+            for (Object o : disks) {
+                JSONObject disk = (JSONObject) o;
+                renameKeyIfPresent(disk, "file_system", "fileSystem");
+                renameKeyIfPresent(disk, "mounted_on", "mountedOn");
+                renameKeyIfPresent(disk, "use_percent", "use%");
+                if (disk.containsKey("blocks") && !disk.containsKey("1k-blocks")) {
+                    disk.put("1k-blocks", disk.remove("blocks"));
+                }
+            }
+        }
+
+        // CPU entries: {"id":"cpu","usage_percent":N} → {"cpu":N}
+        JSONObject cpuList = (JSONObject) json.get("cpuList");
+        if (cpuList != null) {
+            JSONArray cpus = (JSONArray) cpuList.get("cpus");
+            if (cpus != null && !cpus.isEmpty()) {
+                JSONObject first = (JSONObject) cpus.get(0);
+                if (first.containsKey("id") && first.containsKey("usage_percent")) {
+                    JSONArray normalized = new JSONArray();
+                    for (Object o : cpus) {
+                        JSONObject entry = (JSONObject) o;
+                        String id = (String) entry.get("id");
+                        long percent = (long) entry.get("usage_percent");
+                        JSONObject newEntry = new JSONObject();
+                        newEntry.put(id, percent);
+                        normalized.add(newEntry);
+                    }
+                    cpuList.put("cpus", normalized);
+                }
+            }
+        }
+    }
+
+    private void renameKeyIfPresent(JSONObject obj, String oldKey, String newKey) {
+        if (obj.containsKey(oldKey) && !obj.containsKey(newKey)) {
+            obj.put(newKey, obj.remove(oldKey));
+        }
+    }
+
     // Common: extract fields from JSONObject, update dialogs & graphs
     // -----------------------------------------------------------------
 

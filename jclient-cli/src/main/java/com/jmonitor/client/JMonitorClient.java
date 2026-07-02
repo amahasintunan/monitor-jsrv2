@@ -21,6 +21,7 @@ import org.apache.commons.cli.Options;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
@@ -135,22 +136,27 @@ public class JMonitorClient implements Runnable {
                 socket = new Socket();
                 socket.connect(new InetSocketAddress(hostName, portNumber), timeout);
                 socket.setSoTimeout(timeout);
+
+                // Send trigger byte — required by C++ TCP server which blocks on
+                // recv() before responding. Harmless for Java TCP server which
+                // does not read from the socket before writing its response.
+                OutputStream out = socket.getOutputStream();
+                out.write(0);
+                out.flush();
+
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-                StringBuilder responseBuilder = new StringBuilder();
-                String line;
-                while ((line = in.readLine()) != null) {
-                    responseBuilder.append(line);
+                String responseJson = in.readLine();
+                if (responseJson != null) {
+                    DateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
+                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                    System.out.println(sdf.format(timestamp) + " " + TITLE_NAME + ": [receive " + hostName + ":"
+                            + portNumber + "] " + responseJson);
                 }
-                String responseJson = responseBuilder.toString();
-                DateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                System.out.println(sdf.format(timestamp) + " " + TITLE_NAME + ": [receive " + hostName + ":"
-                        + portNumber + "] " + responseJson);
             } catch (SocketTimeoutException ste) {
                 DateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 System.out.println(sdf.format(timestamp) + " " + TITLE_NAME
-                        + ": socket.connect() timed out");
+                        + ": socket timed out");
             } catch (Exception ex) {
                 logger.severe(TITLE_NAME + ": Exception " + ex.getMessage());
                 running = false;
@@ -174,7 +180,9 @@ public class JMonitorClient implements Runnable {
     // ---- HTTP transport --------------------------------------------------------
 
     private void runHttp() {
-        String monitorUrl = "http://" + hostName + ":" + portNumber + "/";
+        // /metrics works with both C++ HTTP server (exact match) and
+        // Java HTTP server (root context "/" prefix-matches "/metrics").
+        String monitorUrl = "http://" + hostName + ":" + portNumber + "/metrics";
         while (running) {
             boolean isReceived = false;
             for (int i = 1; i <= NUM_RETRIES; i++) {
