@@ -30,7 +30,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -155,17 +157,32 @@ public class JMonitorServer {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 try {
-                    String monitorStats = buildMonitorStats();
-                    if (echo) {
-                        DateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
-                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                        System.out.println(sdf.format(timestamp) + " " + TITLE_NAME + ": [send "
-                                + clientSocket.getInetAddress().getHostName()
-                                + ":" + clientSocket.getPort() + "] " + monitorStats);
-                    }
+                    // Persistent connection: read trigger byte, send response, repeat.
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
                     Writer out = new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8");
-                    out.write(monitorStats);
-                    out.flush();
+                    while (true) {
+                        // Read the 1-byte trigger from the client.
+                        int trigger = in.read();
+                        if (trigger < 0) {
+                            break;  // client disconnected
+                        }
+
+                        String monitorStats = buildMonitorStats();
+                        if (echo) {
+                            DateFormat sdf = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
+                            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                            System.out.println(sdf.format(timestamp) + " " + TITLE_NAME + ": [send "
+                                    + clientSocket.getInetAddress().getHostName()
+                                    + ":" + clientSocket.getPort() + "] " + monitorStats);
+                        }
+                        // Newline-terminated response for BufferedReader.readLine() compatibility.
+                        out.write(monitorStats);
+                        out.write('\n');
+                        out.flush();
+                    }
+                } catch (IOException e) {
+                    logger.fine(TITLE_NAME + ": Client connection error: " + e.getMessage());
                 } finally {
                     try {
                         clientSocket.close();
